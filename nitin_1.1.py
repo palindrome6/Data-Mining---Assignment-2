@@ -74,6 +74,7 @@ if __name__ == "__main__":
     print
     classes = data_binary.values[:,18:]
     # attr_names = data_binary.columns.values)[0:18]
+    #rodr was here
     print len(training)
     print len(classes)
     clf = DecisionTreeClassifier()
