@@ -57,7 +57,7 @@ if __name__ == "__main__":
     dataset = openml.download_dataset(10)
     X, y, attribute_names = dataset.get_dataset(target=dataset.default_target_attribute, return_attribute_names=True)
     iris = pd.DataFrame(X, columns=attribute_names)
-    iris['class'] = y
+    iris['class_type'] = y
 
 
     #A
@@ -67,15 +67,23 @@ if __name__ == "__main__":
     #B
 
 
+    data_binary = iris[iris.class_type != 3]
+    data_binary = data_binary[data_binary.class_type != 0]
+    training = data_binary.values[:,:18]
+    classes = data_binary.values[:,18:]
+    print classes
+    clf = DecisionTreeClassifier()
+    clf.fit(training[:,[0,1]], classes)
+    plot_surface(clf, training[:,[0,1]], classes)
 
     #C
-    data_binary = iris[:]
-    training = data_binary.values[:,[0,1]]
-    classes = map(list, data_binary.values[:,18:])
-    classes = np.array(classes).astype(int).flatten()
-    clf = DecisionTreeClassifier()
-    clf.fit(training, classes)
-    plot_surface(clf, training, classes)
+    # data_binary = iris[:]
+    # training = data_binary.values[:,[0,1]]
+    # classes = map(list, data_binary.values[:,18:])
+    # classes = np.array(classes).astype(int).flatten()
+    # clf = DecisionTreeClassifier()
+    # clf.fit(training, classes)
+    # plot_surface(clf, training, classes)
 
 
 
