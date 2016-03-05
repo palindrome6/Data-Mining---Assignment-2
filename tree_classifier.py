@@ -6,6 +6,7 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from pandas.tools.plotting import parallel_coordinates
 
+
 def plot_histogram():
     class_histogram = iris['class_type']
     print class_histogram.value_counts()
@@ -18,6 +19,7 @@ def plot_histogram():
     ax.set_xticklabels(alphab)
     plt.bar(pos, frequencies, width, color='#009999')
     plt.show()
+
 
 
 if __name__ == "__main__":
