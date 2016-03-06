@@ -6,7 +6,7 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from pandas.tools.plotting import parallel_coordinates
 from sklearn.tree import DecisionTreeClassifier
-
+from sklearn.datasets import load_iris
 
 def plot_histogram():
     class_histogram = iris['class_type']
@@ -60,104 +60,113 @@ if __name__ == "__main__":
     iris['class_type'] = y
 
 
+    name_lst = list(iris.columns.values)
+    # print name_lst
+    # print iris[:2]
+    # print iris.ix[:5,:18]
+
     #A
     # plot_histogram()
 
 
     #B
-
-
     data_binary = iris[iris.class_type != 3]
     data_binary = data_binary[data_binary.class_type != 0]
-    training = data_binary.values[:,:18]
-    classes = data_binary.values[:,18:]
-    print classes
-    clf = DecisionTreeClassifier()
-    clf.fit(training[:,[0,1]], classes)
-    plot_surface(clf, training[:,[0,1]], classes)
+
+    # print data_binary.ix[:,[0,1]]
 
     #C
-    # data_binary = iris[:]
-    # training = data_binary.values[:,[0,1]]
-    # classes = map(list, data_binary.values[:,18:])
-    # classes = np.array(classes).astype(int).flatten()
-    # clf = DecisionTreeClassifier()
-    # clf.fit(training, classes)
-    # plot_surface(clf, training, classes)
+    training = data_binary.values[:,:18]
+    classes = map(list, data_binary.values[:,18:])
+    classes = np.array(classes).astype(int).flatten()
+    clf = DecisionTreeClassifier()
+    clf.fit(training, classes)
+
+    # print training[:2,[0,1]]
+    # print classes[:2]
+
+    # # Use for plotting only two columns
+    # clf.fit(training[:,[0,1]], classes)
+    # plot_surface(clf, training[:,[0,1]], classes)
+
+
+
+
+    # Parameters
+    n_classes = 3
+    plot_colors = "bry"
+    plot_step = 0.02
+
+    # Load data
+    iris = load_iris()
+    # print iris
+
+    # print iris
+    for pairidx, pair in enumerate([[0, 1], [0, 2], [0, 3],
+                                    [1, 2], [1, 3], [2, 3]]):
+        # We only take the two corresponding features
+        # X = iris.data[:, pair]
+        # y = iris.target
+
+        X = training[:, pair]
+        y = classes
+        # print training[:2,[0,1]]
+        # print classes[:2]
+
+        # Shuffle
+        idx = np.arange(X.shape[0])
+        np.random.seed(13)
+        np.random.shuffle(idx)
+        X = X[idx]
+        y = y[idx]
+
+        # Standardize
+        mean = X.mean(axis=0)
+        std = X.std(axis=0)
+        X = (X - mean) / std
+
+        # Train
+        clf = DecisionTreeClassifier().fit(X, y)
+
+        # Plot the decision boundary
+        plt.subplot(2, 3, pairidx + 1)
+
+        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
+                             np.arange(y_min, y_max, plot_step))
+
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        cs = plt.contourf(xx, yy, Z, cmap=plt.cm.Paired)
+
+
+        # print iris.feature_names[pair[0]]
+        # plt.xlabel(iris.feature_names[pair[0]])
+        # plt.ylabel(iris.feature_names[pair[1]])
+        plt.xlabel(name_lst[pair[0]])
+        plt.ylabel(name_lst[pair[1]])
+        plt.axis("tight")
+
+        # print iris.target_names[0]
+        target_names = ["metastases", "malign lymph"]
+        # Plot the training points
+        for i, color in zip(range(len(target_names)), plot_colors):
+            idx = np.where(y == i)
+            plt.scatter(X[idx, 0], X[idx, 1], c=color, label=target_names[i],
+                        cmap=plt.cm.Paired)
+
+        plt.axis("tight")
+
+    plt.suptitle("Decision surface of a decision tree using paired features")
+    plt.legend()
+    plt.show()
 
 
 
 
 
-    # from sklearn.datasets import load_iris
-    # from sklearn.tree import DecisionTreeClassifier
-    #
-    # # Parameters
-    # n_classes = 3
-    # plot_colors = "bry"
-    # plot_step = 0.02
-    #
-    # # Load data
-    # iris = load_iris()
-    #
-    # # print iris
-    # for pairidx, pair in enumerate([[0, 1], [0, 2], [0, 3],
-    #                                 [1, 2], [1, 3], [2, 3]]):
-    #     # We only take the two corresponding features
-    #     X = iris.data[:, pair]
-    #     print pairidx
-    #     # print X
-    #     y = iris.target
-    #     # print y
-    #
-    #     # Shuffle
-    #     idx = np.arange(X.shape[0])
-    #     np.random.seed(13)
-    #     np.random.shuffle(idx)
-    #     X = X[idx]
-    #     y = y[idx]
-    #
-    #     # Standardize
-    #     mean = X.mean(axis=0)
-    #     std = X.std(axis=0)
-    #     X = (X - mean) / std
-    #
-    #     # Train
-    #     clf = DecisionTreeClassifier().fit(X, y)
-    #
-    #     # Plot the decision boundary
-    #     plt.subplot(2, 3, pairidx + 1)
-    #
-    #     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    #     y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    #     xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
-    #                          np.arange(y_min, y_max, plot_step))
-    #
-    #     Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-    #     Z = Z.reshape(xx.shape)
-    #     cs = plt.contourf(xx, yy, Z, cmap=plt.cm.Paired)
-    #
-    #     plt.xlabel(iris.feature_names[pair[0]])
-    #     plt.ylabel(iris.feature_names[pair[1]])
-    #     plt.axis("tight")
-    #
-    #     # Plot the training points
-    #     for i, color in zip(range(n_classes), plot_colors):
-    #         idx = np.where(y == i)
-    #         plt.scatter(X[idx, 0], X[idx, 1], c=color, label=iris.target_names[i],
-    #                     cmap=plt.cm.Paired)
-    #
-    #     plt.axis("tight")
-    #
-    # plt.suptitle("Decision surface of a decision tree using paired features")
-    # plt.legend()
-    # plt.show()
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
+
+
+
+
