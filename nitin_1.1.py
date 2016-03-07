@@ -3,14 +3,10 @@ import pandas as pd
 import os
 import numpy as np
 import matplotlib.mlab as mlab
-import pydot
 import matplotlib.pyplot as plt
-from sklearn import tree
-from IPython.display import Image
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.externals.six import StringIO
+from pandas.tools.plotting import parallel_coordinates
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.datasets import load_iris
 
 def plot_histogram():
     class_histogram = iris['class_type']
@@ -25,7 +21,6 @@ def plot_histogram():
     plt.bar(pos, frequencies, width, color='#009999')
     plt.show()
 
-# Helper functions
 def plot_surface(clf, X, y,
                  xlim=(-10, 10), ylim=(-10, 10), n_steps=250,
                  subplot=None, show=True):
@@ -56,31 +51,117 @@ if __name__ == "__main__":
     home_dir = os.path.expanduser("~")
     openml_dir = os.path.join(home_dir, ".openml")
     cache_dir = os.path.join(openml_dir, "cache")
-    with open(os.path.join(openml_dir, "apikey_nitin.txt"), 'r') as fh:
+    with open(os.path.join(openml_dir, "apikey.txt"), 'r') as fh:
         key = fh.readline().rstrip('\n')
     openml = APIConnector(cache_directory=cache_dir, apikey=key)
     dataset = openml.download_dataset(10)
     X, y, attribute_names = dataset.get_dataset(target=dataset.default_target_attribute, return_attribute_names=True)
     iris = pd.DataFrame(X, columns=attribute_names)
     iris['class_type'] = y
-    print len(iris)
+
+
+    name_lst = list(iris.columns.values)
+    # print name_lst
+    # print iris[:2]
+    # print iris.ix[:5,:18]
+
+    #A
+    # plot_histogram()
+
+
+    #B
     data_binary = iris[iris.class_type != 3]
     data_binary = data_binary[data_binary.class_type != 0]
-    print len(data_binary)
 
-    n_sample = data_binary['class_type']
-    # print data_binary['lymphatics'][:3]
+    # print data_binary.ix[:,[0,1]]
+
+    #C
     training = data_binary.values[:,:18]
-    print
-    classes = data_binary.values[:,18:]
-    # attr_names = data_binary.columns.values)[0:18]
-    #rodr was here
-    print len(training)
-    print len(classes)
+    classes = map(list, data_binary.values[:,18:])
+    classes = np.array(classes).astype(int).flatten()
     clf = DecisionTreeClassifier()
-    clf = clf.fit(training, classes)
-    print clf
-    # comment
+    clf.fit(training, classes)
+
+    # print training[:2,[0,1]]
+    # print classes[:2]
+
+    # # Use for plotting only two columns
+    # clf.fit(training[:,[0,1]], classes)
+    # plot_surface(clf, training[:,[0,1]], classes)
+
+
+
+
+    # Parameters
+    n_classes = 3
+    plot_colors = "bry"
+    plot_step = 0.02
+
+    # Load data
+    iris = load_iris()
+    # print iris
+
+    # print iris
+    for pairidx, pair in enumerate([[0, 1], [0, 2], [0, 3],
+                                    [1, 2], [1, 3], [2, 3]]):
+        # We only take the two corresponding features
+        # X = iris.data[:, pair]
+        # y = iris.target
+
+        X = training[:, pair]
+        y = classes
+        # print training[:2,[0,1]]
+        # print classes[:2]
+
+        # Shuffle
+        idx = np.arange(X.shape[0])
+        np.random.seed(13)
+        np.random.shuffle(idx)
+        X = X[idx]
+        y = y[idx]
+
+        # Standardize
+        mean = X.mean(axis=0)
+        std = X.std(axis=0)
+        X = (X - mean) / std
+
+        # Train
+        clf = DecisionTreeClassifier().fit(X, y)
+
+        # Plot the decision boundary
+        plt.subplot(2, 3, pairidx + 1)
+
+        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
+                             np.arange(y_min, y_max, plot_step))
+
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        cs = plt.contourf(xx, yy, Z, cmap=plt.cm.Paired)
+
+
+        # print iris.feature_names[pair[0]]
+        # plt.xlabel(iris.feature_names[pair[0]])
+        # plt.ylabel(iris.feature_names[pair[1]])
+        plt.xlabel(name_lst[pair[0]])
+        plt.ylabel(name_lst[pair[1]])
+        plt.axis("tight")
+
+        # print iris.target_names[0]
+        target_names = ["metastases", "malign lymph"]
+        # Plot the training points
+        for i, color in zip(range(len(target_names)), plot_colors):
+            idx = np.where(y == i)
+            plt.scatter(X[idx, 0], X[idx, 1], c=color, label=target_names[i],
+                        cmap=plt.cm.Paired)
+
+        plt.axis("tight")
+
+    plt.suptitle("Decision surface of a decision tree using paired features")
+    plt.legend()
+    plt.show()
+
 
 
 
