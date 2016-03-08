@@ -6,7 +6,30 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from pandas.tools.plotting import parallel_coordinates
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import ExtraTreeClassifier
 from sklearn.datasets import load_iris
+from IPython.display import Image
+from sklearn.externals.six import StringIO
+from sklearn import tree
+import pydot
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import fbeta_score
+from sklearn.metrics import zero_one_loss
+from sklearn.cross_validation import train_test_split
+from sklearn.cross_validation import KFold
+from sklearn.cross_validation import cross_val_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import make_classification
+from sklearn.ensemble import ExtraTreesClassifier
 
 def plot_histogram():
     class_histogram = iris['class_type']
@@ -76,97 +99,145 @@ if __name__ == "__main__":
     # print data_binary.ix[:,[0,1]]
 
     #C
-    training = data_binary.values[:,:18]
+    training = data_binary.values[:, :18]
     classes = map(list, data_binary.values[:,18:])
     classes = np.array(classes).astype(int).flatten()
     clf = DecisionTreeClassifier()
     clf.fit(training, classes)
-
-    # print training[:2,[0,1]]
-    # print classes[:2]
-
-    # # Use for plotting only two columns
-    # clf.fit(training[:,[0,1]], classes)
-    # plot_surface(clf, training[:,[0,1]], classes)
+    dlf = DecisionTreeClassifier()
+    dlf.fit(training, classes)
 
 
+print "CART"
+print("Training error =", zero_one_loss(classes, clf.predict(training)))
 
 
-    # Parameters
-    n_classes = 3
-    plot_colors = "bry"
-    plot_step = 0.02
+X_train, X_test, y_train, y_test = train_test_split(training, classes)
+clf = DecisionTreeClassifier()
+clf.fit(X_train, y_train)
+print("Training error =", zero_one_loss(y_train, clf.predict(X_train)))
+print("Test error =", zero_one_loss(y_test, clf.predict(X_test)))
 
-    # Load data
-    iris = load_iris()
-    # print iris
+scores = []
+print "K-fold cross validation"
+for train, test in KFold(n=len(training), n_folds=5, random_state=42):
+    X_train, y_train = training[train], classes[train]
+    X_test, y_test = training[test], classes[test]
+    clf = DecisionTreeClassifier().fit(X_train, y_train)
+    scores.append(zero_one_loss(y_test, clf.predict(X_test)))
+#
+print("CV error = %f +-%f" % (np.mean(scores), np.std(scores)))
+#
+print "Cross validation"
+scores = cross_val_score(DecisionTreeClassifier(), training, classes,
+                         cv=KFold(n=len(training), n_folds=5, random_state=42),
+                         scoring="accuracy")
+print("CV error = %f +-%f" % (1. - np.mean(scores), np.std(scores)))
+print("Accuracy =", accuracy_score(y_test, clf.predict(X_test)))
+print("Precision =", precision_score(y_test, clf.predict(X_test)))
+print("Recall =", recall_score(y_test, clf.predict(X_test)))
+print("F =", fbeta_score(y_test, clf.predict(X_test), beta=1))
+print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-    # print iris
-    for pairidx, pair in enumerate([[0, 1], [0, 2], [0, 3],
-                                    [1, 2], [1, 3], [2, 3]]):
-        # We only take the two corresponding features
-        # X = iris.data[:, pair]
-        # y = iris.target
+print "Random forest classifier"
+tlf = RandomForestClassifier(n_estimators=500)
+tlf.fit(training, classes)
 
-        X = training[:, pair]
-        y = classes
-        # print training[:2,[0,1]]
-        # print classes[:2]
-
-        # Shuffle
-        idx = np.arange(X.shape[0])
-        np.random.seed(13)
-        np.random.shuffle(idx)
-        X = X[idx]
-        y = y[idx]
-
-        # Standardize
-        mean = X.mean(axis=0)
-        std = X.std(axis=0)
-        X = (X - mean) / std
-
-        # Train
-        clf = DecisionTreeClassifier().fit(X, y)
-
-        # Plot the decision boundary
-        plt.subplot(2, 3, pairidx + 1)
-
-        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
-                             np.arange(y_min, y_max, plot_step))
-
-        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-        Z = Z.reshape(xx.shape)
-        cs = plt.contourf(xx, yy, Z, cmap=plt.cm.Paired)
+print("Training error =", zero_one_loss(classes, tlf.predict(training)))
 
 
-        # print iris.feature_names[pair[0]]
-        # plt.xlabel(iris.feature_names[pair[0]])
-        # plt.ylabel(iris.feature_names[pair[1]])
-        plt.xlabel(name_lst[pair[0]])
-        plt.ylabel(name_lst[pair[1]])
-        plt.axis("tight")
+X_train, X_test, y_train, y_test = train_test_split(training, classes)
+tlf = RandomForestClassifier()
+tlf.fit(X_train, y_train)
+print("Training error =", zero_one_loss(y_train, tlf.predict(X_train)))
+print("Test error =", zero_one_loss(y_test, tlf.predict(X_test)))
 
-        # print iris.target_names[0]
-        target_names = ["metastases", "malign lymph"]
-        # Plot the training points
-        for i, color in zip(range(len(target_names)), plot_colors):
-            idx = np.where(y == i)
-            plt.scatter(X[idx, 0], X[idx, 1], c=color, label=target_names[i],
-                        cmap=plt.cm.Paired)
+scores = []
+print "K-fold cross validation"
+for train, test in KFold(n=len(training), n_folds=5, random_state=42):
+    X_train, y_train = training[train], classes[train]
+    X_test, y_test = training[test], classes[test]
+    tlf = RandomForestClassifier().fit(X_train, y_train)
+    scores.append(zero_one_loss(y_test, tlf.predict(X_test)))
+#
+print("CV error = %f +-%f" % (np.mean(scores), np.std(scores)))
+#
+print "Cross validation"
+scores = cross_val_score(RandomForestClassifier(), training, classes,
+                         cv=KFold(n=len(training), n_folds=5, random_state=42),
+                         scoring="accuracy")
+print("CV error = %f +-%f" % (1. - np.mean(scores), np.std(scores)))
+print("Accuracy =", accuracy_score(y_test, tlf.predict(X_test)))
+print("Precision =", precision_score(y_test, tlf.predict(X_test)))
+print("Recall =", recall_score(y_test, tlf.predict(X_test)))
+print("F =", fbeta_score(y_test, tlf.predict(X_test), beta=1))
+print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-        plt.axis("tight")
+print "Extra Tree classifier"
+rlf = ExtraTreeClassifier()
+rlf.fit(training, classes)
 
-    plt.suptitle("Decision surface of a decision tree using paired features")
-    plt.legend()
-    plt.show()
-
-
+print("Training error =", zero_one_loss(classes, rlf.predict(training)))
 
 
+X_train, X_test, y_train, y_test = train_test_split(training, classes)
+rlf = ExtraTreeClassifier()
+rlf.fit(X_train, y_train)
+print("Training error =", zero_one_loss(y_train, rlf.predict(X_train)))
+print("Test error =", zero_one_loss(y_test, rlf.predict(X_test)))
+
+scores = []
+print "K-fold cross validation"
+for train, test in KFold(n=len(training), n_folds=5, random_state=42):
+    X_train, y_train = training[train], classes[train]
+    X_test, y_test = training[test], classes[test]
+    rlf = ExtraTreeClassifier().fit(X_train, y_train)
+    scores.append(zero_one_loss(y_test, rlf.predict(X_test)))
+#
+print("CV error = %f +-%f" % (np.mean(scores), np.std(scores)))
+#
+print "Cross validation"
+scores = cross_val_score(ExtraTreeClassifier(), training, classes,
+                         cv=KFold(n=len(training), n_folds=5, random_state=42),
+                         scoring="accuracy")
+print("CV error = %f +-%f" % (1. - np.mean(scores), np.std(scores)))
+print("Accuracy =", accuracy_score(y_test, rlf.predict(X_test)))
+print("Precision =", precision_score(y_test, rlf.predict(X_test)))
+print("Recall =", recall_score(y_test, rlf.predict(X_test)))
+print("F =", fbeta_score(y_test, rlf.predict(X_test), beta=1))
+
+
+print "Feature importance, dlf:"
+print(dlf.feature_importances_)
 
 
 
 
 
+# Build a classification task using 3 informative features
+
+
+# Build a forest and compute the feature importances
+forest = ExtraTreesClassifier()
+
+forest.fit(training, classes)
+importances = forest.feature_importances_
+std = np.std([tree.feature_importances_ for tree in forest.estimators_],
+             axis=0)
+indices = np.argsort(importances)[::-1]
+
+# Print the feature ranking
+print("Feature ranking:")
+
+for f in range(X.shape[1]):
+    print name_lst[f]
+    print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+
+# Plot the feature importances of the forest
+plt.figure()
+plt.title("Feature importances")
+plt.bar(range(X.shape[1]), importances[indices],
+       color="r", yerr=std[indices], align="center")
+plt.xticks(range(X.shape[1]), indices)
+plt.xlim([-1, X.shape[1]])
+plt.show()
