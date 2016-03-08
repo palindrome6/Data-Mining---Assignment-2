@@ -8,6 +8,7 @@ from pandas.tools.plotting import parallel_coordinates
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
 
+
 def plot_histogram():
     class_histogram = iris['class_type']
     print class_histogram.value_counts()
