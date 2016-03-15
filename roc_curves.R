@@ -35,8 +35,8 @@ temp1.task = makeClassifTask(data = temp1 ,target = "true_label")
 
 n = getTaskSize(temp1.task) # make a 2/3 split
 print(n)
-train1.set = sample(n, size = round(2/3 * n))
-# train1.set = prediction_A[1:10]
+# train1.set = sample(n, size = round(2/3 * n))
+train1.set = prediction_A[1:8]
 print(train1.set)
 test1.set = setdiff(seq_len(n), train1.set)
 
@@ -50,8 +50,8 @@ temp2.task = makeClassifTask(data = temp2 ,target = "true_label")
 
 n = getTaskSize(temp2.task) # make a 2/3 split
 print(n)
-train2.set = sample(n, size = round(2/3 * n))
-# train2.set = prediction_B[1:10]
+# train2.set = sample(n, size = round(2/3 * n))
+train2.set = prediction_B[1:8]
 print(train2.set)
 test2.set = setdiff(seq_len(n), train2.set)
 
@@ -67,18 +67,18 @@ temp3.task = makeClassifTask(data = temp3 ,target = "true_label")
 n = getTaskSize(temp3.task) # make a 2/3 split
 
 print(n)
-train3.set = sample(n, size = round(2/3 * n))
-# train3.set = prediction_C[1:8]
+train3.set = sample(n, size = round(2/3 * n), replace = false, prob = [0.8, 0.9, 0.7, 0.6, 0.4, 0.8, 0.4, 0.4, 0.6, 0.4, 0.4, 0.4, 0.2])
+# train3.set = prediction_C[1:8
 print(train3.set)
 test3.set = setdiff(seq_len(n), train3.set)
 
 
-lrn3 = makeLearner("classif.kknn", predict.type = "prob", predict.threshold = 0.5) # output probabilities
+lrn3 = makeLearner("classif.kknn", predict.type = "prob", predict.threshold = 0.2) # output probabilities
 mod3 = train(lrn3, temp3.task, subset = train3.set)
 pred3 = predict(mod3, task = temp3.task, subset = test3.set)
 
 # Plot.
-df = generateThreshVsPerfData(list(kknn1 = pred1, kknn2 = pred2, kknn3 = pred3), measures = list(fpr, tpr))
+df = generateThreshVsPerfData(list(predictionA = pred1, predictionB = pred2, predictionC = pred3), measures = list(fpr, tpr))
 plotROCCurves(df)
 qplot(x = fpr, y = tpr, color = learner, data = df$data, geom = "path")
 

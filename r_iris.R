@@ -1,3 +1,4 @@
+options(warn=-1)
 library(OpenML)
 library(ggplot2)
 library(cowplot)
@@ -15,21 +16,9 @@ library(RWeka)
 library(partykit)
 
 iris = getOMLDataSet(did = 10, verbosity=0)$data
-
 # iris<-iris[!(iris$class=="fibrosis" | iris$class=="normal"),]
-iristask = makeClassifTask(data = iris, target = "class")
-iris_mat = data.matrix(iris)
-# ggplot(data=iris, aes(x=sepallength, y=sepalwidth, color=class, shape=class)) + geom_point(size=2) + theme_cowplot() + theme(legend.position = c(0.14, 0.80))
-
-# ab = iris[,1:18]
-# cd = iris[,19]
-# 
-# str(iris)
-# m1 <- J48(class~., data = iris)
-# # if(require("party", quietly = TRUE)) plot(m1)
-
-
+iristask = makeClassifTask(data = iris, target ="class")
 rpart = makeLearner("classif.rpart")
 rpart = setHyperPars(rpart, cp = 0, minbucket=4)
-model = train(rpart, m1)
+model = train(rpart, iristask)
 fancyRpartPlot(model$learner.model, sub="")
