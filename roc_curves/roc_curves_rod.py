@@ -7,6 +7,7 @@ from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
 from scipy import interp
 from sklearn.metrics import roc_auc_score
+from scipy.spatial import ConvexHull
 
 threshold = 0.5
 y_true = np.array([1,1,1,1,1,1,1,0,0,0,0,0,0])
@@ -28,7 +29,8 @@ for i in range(n_classes):
     fpr[i], tpr[i], _ = roc_curve(y_true, scores[i], pos_label=1)
     roc_auc[i] = auc(fpr[i], tpr[i])
 
-
+print fpr[0]
+print tpr[0]
 #plot for each class
 names=['A','B','C']
 for i in range(n_classes):
@@ -43,5 +45,9 @@ plt.title('ROC curves')
 plt.legend(loc="lower right")
 plt.show()
 
+
+
+
+#convexHull
 
 
